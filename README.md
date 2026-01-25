@@ -91,6 +91,16 @@ We put it all together:
 
 ## 🚀 Quick Start
 
+### 0. Start Antigravity with Debug Port (Optional)
+
+If DevTools isn't working, start Antigravity with debug port enabled:
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Antigravity\Antigravity.exe" --remote-debugging-port=9222
+```
+
+---
+
 ### 1. Get Your CSRF Token
 
 1. Open Antigravity
