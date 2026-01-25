@@ -4,7 +4,7 @@
  * Usage: node send.js <cascadeId> "Your message"
  */
 
-import api from './api.js';
+import api from '../api.js';
 
 async function main() {
     const cascadeId = process.argv[2];

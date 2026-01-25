@@ -170,6 +170,124 @@ export async function startCascade(port, csrfToken) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Protobuf Encoding (for HandleCascadeUserInteraction)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function encodeVarint(value) {
+    const bytes = [];
+    while (value > 127) {
+        bytes.push((value & 0x7F) | 0x80);
+        value >>>= 7;
+    }
+    bytes.push(value);
+    return Buffer.from(bytes);
+}
+
+function encodeString(fieldNum, str) {
+    const tag = Buffer.from([(fieldNum << 3) | 2]);
+    const data = Buffer.from(str, 'utf-8');
+    return Buffer.concat([tag, encodeVarint(data.length), data]);
+}
+
+function encodeInt(fieldNum, value) {
+    return Buffer.concat([Buffer.from([(fieldNum << 3) | 0]), encodeVarint(value)]);
+}
+
+function encodeNested(fieldNum, nested) {
+    const tag = Buffer.from([(fieldNum << 3) | 2]);
+    return Buffer.concat([tag, encodeVarint(nested.length), nested]);
+}
+
+/**
+ * POST with proto content type
+ */
+export async function postProto(port, csrfToken, endpoint, protoBody) {
+    return new Promise((resolve, reject) => {
+        const req = https.request({
+            hostname: '127.0.0.1',
+            port,
+            path: `${LS}/${endpoint}`,
+            method: 'POST',
+            headers: {
+                'x-codeium-csrf-token': csrfToken,
+                'connect-protocol-version': '1',
+                'content-type': 'application/proto',
+                'Origin': 'vscode-file://vscode-app'
+            },
+            rejectUnauthorized: false,
+            timeout: 30000
+        }, res => {
+            const chunks = [];
+            res.on('data', c => chunks.push(c));
+            res.on('end', () => {
+                resolve({
+                    ok: res.statusCode === 200,
+                    status: res.statusCode,
+                    data: Buffer.concat(chunks)
+                });
+            });
+        });
+
+        req.on('error', reject);
+        req.write(protoBody);
+        req.end();
+    });
+}
+
+/**
+ * Accept a pending command (HandleCascadeUserInteraction)
+ * 
+ * @param {number} port - Language Server port
+ * @param {string} csrfToken - CSRF token
+ * @param {string} cascadeId - Cascade ID
+ * @param {string} trajectoryId - Trajectory ID (from GetCascadeTrajectory)
+ * @param {number} stepIndex - Step index of the command
+ * @param {string} command - The command text to accept
+ */
+export async function acceptCommand(port, csrfToken, cascadeId, trajectoryId, stepIndex, command) {
+    const trajectoryInfo = Buffer.concat([
+        encodeString(1, trajectoryId),
+        encodeInt(2, stepIndex),
+    ]);
+
+    const actionDetails = Buffer.concat([
+        encodeInt(1, 1),  // action_type = 1 (accept)
+        encodeString(2, command),
+        encodeString(3, command),
+    ]);
+
+    const protoBody = Buffer.concat([
+        encodeString(4, cascadeId),
+        encodeNested(2, trajectoryInfo),
+        encodeNested(5, actionDetails),
+    ]);
+
+    return postProto(port, csrfToken, 'HandleCascadeUserInteraction', protoBody);
+}
+
+/**
+ * Reject a pending command
+ */
+export async function rejectCommand(port, csrfToken, cascadeId, trajectoryId, stepIndex) {
+    const trajectoryInfo = Buffer.concat([
+        encodeString(1, trajectoryId),
+        encodeInt(2, stepIndex),
+    ]);
+
+    const actionDetails = Buffer.concat([
+        encodeInt(1, 2),  // action_type = 2 (reject)
+    ]);
+
+    const protoBody = Buffer.concat([
+        encodeString(4, cascadeId),
+        encodeNested(2, trajectoryInfo),
+        encodeNested(5, actionDetails),
+    ]);
+
+    return postProto(port, csrfToken, 'HandleCascadeUserInteraction', protoBody);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Default Export
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -178,7 +296,11 @@ export default {
     saveConfig,
     discoverPort,
     post,
+    postProto,
     sendMessage,
     getTrajectory,
-    startCascade
+    startCascade,
+    acceptCommand,
+    rejectCommand
 };
+
