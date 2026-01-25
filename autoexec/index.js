@@ -4,10 +4,12 @@
  * Control whether commands run automatically or require approval.
  *
  * Usage:
- *   node index.js <cascadeId> "message"                 # Default (manual approval)
- *   node index.js <cascadeId> "message" --auto          # Auto-execute safe commands
- *   node index.js <cascadeId> "message" --turbo         # Auto-execute ALL commands (dangerous!)
- *   node index.js <cascadeId> "message" --model M13     # Use specific model
+ *   node index.js <cascadeId> "message"                     # Default (manual approval)
+ *   node index.js <cascadeId> "message" --auto              # Auto-execute safe commands
+ *   node index.js <cascadeId> "message" --turbo             # Auto-execute ALL commands (dangerous!)
+ *   node index.js <cascadeId> "message" --turbo --nonotify  # Turbo + no pausing for user
+ *   node index.js <cascadeId> "message" --server            # Server mode: turbo + nonotify
+ *   node index.js <cascadeId> "message" --model opus        # Use specific model
  */
 
 import api from '../api.js';
@@ -19,6 +21,13 @@ const POLICIES = {
     'turbo': 'CASCADE_COMMANDS_AUTO_EXECUTION_ALL'        // Auto-run everything (dangerous!)
 };
 
+// Artifact review modes
+const REVIEW_MODES = {
+    'always': 'ARTIFACT_REVIEW_MODE_ALWAYS',    // Always pause for review
+    'never': 'ARTIFACT_REVIEW_MODE_NEVER',      // Never pause (nonotify)
+    'auto': 'ARTIFACT_REVIEW_MODE_AUTO'         // Auto decide
+};
+
 // Available models (discovered from traffic)
 const MODELS = {
     'M12': 'MODEL_PLACEHOLDER_M12',     // Default model
@@ -27,7 +36,7 @@ const MODELS = {
     'sonnet': 'claude-3-5-sonnet-20241022'
 };
 
-async function sendWithConfig(port, csrfToken, cascadeId, message, execPolicy, model) {
+async function sendWithConfig(port, csrfToken, cascadeId, message, execPolicy, reviewMode, model) {
     const body = {
         cascadeId,
         items: [{ text: message }],
@@ -50,7 +59,7 @@ async function sendWithConfig(port, csrfToken, cascadeId, message, execPolicy, m
                         }
                     },
                     notifyUser: {
-                        artifactReviewMode: 'ARTIFACT_REVIEW_MODE_ALWAYS'
+                        artifactReviewMode: reviewMode
                     }
                 },
                 requestedModel: {
@@ -70,11 +79,18 @@ async function main() {
     if (!cascadeId || cascadeId.startsWith('--')) {
         console.log('GPI AutoExec - Send messages with configurable auto-execution\n');
         console.log('Usage:');
-        console.log('  node index.js <cascadeId> "message"              # Manual approval (default)');
-        console.log('  node index.js <cascadeId> "message" --auto       # Auto-run safe commands');
-        console.log('  node index.js <cascadeId> "message" --turbo      # Auto-run ALL (dangerous!)');
-        console.log('  node index.js <cascadeId> "message" --model M13  # Use specific model');
-        console.log('\nModels: M12 (default), M13, opus, sonnet');
+        console.log('  node index.js <cascadeId> "message"                     # Manual approval (default)');
+        console.log('  node index.js <cascadeId> "message" --auto              # Auto-run safe commands');
+        console.log('  node index.js <cascadeId> "message" --turbo             # Auto-run ALL (dangerous!)');
+        console.log('  node index.js <cascadeId> "message" --turbo --nonotify  # Turbo + no pause');
+        console.log('  node index.js <cascadeId> "message" --server            # Server mode (turbo+nonotify)');
+        console.log('  node index.js <cascadeId> "message" --model opus        # Specific model');
+        console.log('\nFlags:');
+        console.log('  --auto       Auto-run safe commands only');
+        console.log('  --turbo      Auto-run ALL commands (dangerous!)');
+        console.log('  --nonotify   Never pause for user review');
+        console.log('  --server     Shortcut for --turbo --nonotify');
+        console.log('  --model X    Use model (M12, M13, opus, sonnet)');
         console.log('\n⚠️ WARNING: --turbo will run ANY command without asking!');
         process.exit(1);
     }
@@ -96,15 +112,22 @@ async function main() {
     // Parse flags
     const hasAuto = args.includes('--auto');
     const hasTurbo = args.includes('--turbo');
+    const hasServer = args.includes('--server');
+    const hasNoNotify = args.includes('--nonotify');
     const modelIndex = args.indexOf('--model');
     const modelArg = modelIndex >= 0 ? args[modelIndex + 1] : 'M12';
 
     // Determine execution policy
     let policy = 'off';
-    if (hasTurbo) policy = 'turbo';
+    if (hasServer || hasTurbo) policy = 'turbo';
     else if (hasAuto) policy = 'auto';
 
+    // Determine review mode
+    let reviewKey = 'always';
+    if (hasServer || hasNoNotify) reviewKey = 'never';
+
     const execPolicy = POLICIES[policy];
+    const reviewMode = REVIEW_MODES[reviewKey];
     const model = MODELS[modelArg] || MODELS['M12'];
 
     const port = api.discoverPort();
@@ -124,13 +147,16 @@ async function main() {
     console.log(`📍 Cascade: ${cascadeId}`);
     console.log(`📝 Message: "${message.substring(0, 50)}..."`);
     console.log(`📌 Execution: ${policy.toUpperCase()}`);
+    console.log(`🔔 Notify: ${reviewKey === 'never' ? 'OFF' : 'ON'}`);
     console.log(`🤖 Model: ${modelArg}`);
 
-    if (policy === 'turbo') {
+    if (hasServer) {
+        console.log('\n🖥️ SERVER MODE - Turbo + No pause for review\n');
+    } else if (policy === 'turbo') {
         console.log('\n⚠️ ⚠️ ⚠️  TURBO MODE - Commands will run automatically! ⚠️ ⚠️ ⚠️\n');
     }
 
-    const result = await sendWithConfig(port, config.csrfToken, cascadeId, message, execPolicy, model);
+    const result = await sendWithConfig(port, config.csrfToken, cascadeId, message, execPolicy, reviewMode, model);
 
     if (result.ok) {
         console.log('\n✅ Message sent with custom config!');

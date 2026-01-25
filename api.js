@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import https from 'https';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -291,6 +292,31 @@ export async function rejectCommand(port, csrfToken, cascadeId, trajectoryId, st
 // Default Export
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * List all cascades (conversations) from local storage
+ */
+export function listCascades() {
+    const convPath = path.join(os.homedir(), '.gemini', 'antigravity', 'conversations');
+
+    if (!fs.existsSync(convPath)) {
+        return { ok: false, error: 'Conversations folder not found' };
+    }
+
+    const files = fs.readdirSync(convPath).filter(f => f.endsWith('.pb'));
+
+    const cascades = files.map(f => {
+        const filePath = path.join(convPath, f);
+        const stats = fs.statSync(filePath);
+        return {
+            cascadeId: f.replace('.pb', ''),
+            modified: stats.mtime.toISOString(),
+            sizeKB: (stats.size / 1024).toFixed(1)
+        };
+    }).sort((a, b) => new Date(b.modified) - new Date(a.modified));
+
+    return { ok: true, data: { cascades, count: cascades.length } };
+}
+
 export default {
     loadConfig,
     saveConfig,
@@ -301,6 +327,7 @@ export default {
     getTrajectory,
     startCascade,
     acceptCommand,
-    rejectCommand
+    rejectCommand,
+    listCascades
 };
 
