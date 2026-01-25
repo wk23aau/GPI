@@ -7,5 +7,19 @@
     "scripts": {
         "send": "node send.js",
         "test": "node test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/wk23aau/GPI.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/wk23aau/GPI/issues"
+    },
+    "homepage": "https://github.com/wk23aau/GPI#readme",
+    "dependencies": {
+        "ws": "^8.19.0"
     }
 }
