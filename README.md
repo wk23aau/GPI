@@ -131,14 +131,21 @@ Output:
 
 ---
 
-## 📁 Files
+## 📁 Modules
 
-| File | What it does |
-|------|-------------|
-| `api.js` | The main code that talks to Antigravity |
-| `send.js` | Command-line tool to send messages |
-| `.env` | Your configuration (CSRF token) |
-| `.env.example` | Template showing what to put in .env |
+| Module | What it does |
+|--------|--------------|
+| `listcascades/` | 📋 List all conversations |
+| `startcascade/` | 🆕 Create new conversation |
+| `sendmessage/` | 📤 Send message to AI |
+| `getresponse/` | 📥 Fetch AI's reply (after it finishes) |
+| `trajectory/` | 📊 View complete history (--full, --errors, --pending, --raw) |
+| `handleinteraction/` | ⚡ Accept/reject pending commands |
+| `retry/` | 🔄 Retry after error (--last) |
+| `streamcascade/` | 📡 Watch AI response in real-time |
+| `swarm/` | 🐝 Multi-agent orchestration |
+| `autoexec/` | ⚡ Model + auto-execution control (--auto, --turbo, --model) |
+| `api.js` | Core API functions |
 
 ---
 
