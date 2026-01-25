@@ -1,0 +1,11 @@
+{
+    "name": "gpi",
+    "version": "1.0.0",
+    "description": "Gravity Protocol Interface - Antigravity Chat API",
+    "type": "module",
+    "main": "api.js",
+    "scripts": {
+        "send": "node send.js",
+        "test": "node test.js"
+    }
+}
