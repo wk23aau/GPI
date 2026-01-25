@@ -7,6 +7,7 @@
  *   node index.js                     # Backup all conversations
  *   node index.js <cascadeId>         # Backup specific conversation
  *   node index.js --list              # List available conversations
+ *   node index.js --watch             # Continuously backup every 5 minutes
  */
 
 import fs from 'fs';
@@ -17,7 +18,11 @@ import { execSync } from 'child_process';
 // Paths
 const CONVERSATIONS_PATH = path.join(os.homedir(), '.gemini', 'antigravity', 'conversations');
 const BRAIN_PATH = path.join(os.homedir(), '.gemini', 'antigravity', 'brain');
-const OUTPUT_DIR = path.join(process.cwd(), '..', 'backups');  // GPI/backups folder
+// Save to OneDrive browsie folder
+const OUTPUT_DIR = path.join(os.homedir(), 'OneDrive - University of Hertfordshire', '001 MyData', '0 applications', 'browsie');
+
+// Watch mode settings
+const WATCH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
@@ -270,13 +275,39 @@ function listConversations() {
     }
 }
 
+// Watch mode - continuously backup every 5 minutes
+async function watchMode() {
+    console.log(`\n👀 Watch Mode - Backing up every ${WATCH_INTERVAL_MS / 60000} minutes`);
+    console.log(`📁 Output: ${OUTPUT_DIR}`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+    console.log(`Press Ctrl+C to stop\n`);
+
+    // Run initial backup
+    console.log(`⏰ [${new Date().toLocaleTimeString()}] Running initial backup...`);
+    await createBackup();
+
+    // Schedule recurring backups
+    setInterval(async () => {
+        console.log(`\n⏰ [${new Date().toLocaleTimeString()}] Running scheduled backup...`);
+        await createBackup();
+    }, WATCH_INTERVAL_MS);
+
+    // Keep process alive
+    process.on('SIGINT', () => {
+        console.log(`\n\n👋 Watch mode stopped. Goodbye!`);
+        process.exit(0);
+    });
+}
+
 // Main
 async function main() {
     const args = process.argv.slice(2);
 
     console.log(`\n💾 GPI SaveChat - Backup & Restore\n`);
 
-    if (args.includes('--list') || args.includes('-l')) {
+    if (args.includes('--watch') || args.includes('-w')) {
+        await watchMode();
+    } else if (args.includes('--list') || args.includes('-l')) {
         listConversations();
     } else if (args.includes('--help') || args.includes('-h')) {
         console.log('Usage:');
@@ -284,8 +315,9 @@ async function main() {
         console.log('  node index.js <cascadeId>         Backup specific conversation');
         console.log('  node index.js id1 id2 id3         Backup multiple conversations');
         console.log('  node index.js --list              List available conversations');
+        console.log('  node index.js --watch             Continuously backup every 5 minutes');
         console.log('  node index.js --help              Show this help');
-        console.log('\nOutput: Creates zip in ../backups/ with restore script');
+        console.log(`\nOutput: Creates zip in ${OUTPUT_DIR}`);
     } else if (args.length > 0 && !args[0].startsWith('--')) {
         // Backup specific conversations
         await createBackup(args);

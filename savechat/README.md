@@ -13,6 +13,9 @@ node index.js cf174549-2581-4c24-b82b-a4115c015cea
 
 # List available conversations
 node index.js --list
+
+# Watch mode - backup every 5 minutes continuously
+node index.js --watch
 ```
 
 ---
