@@ -28,6 +28,9 @@ node index.js <cascadeId> --full
 # Show only pending steps (waiting for user action)
 node index.js <cascadeId> --pending
 
+# Show only error steps (failed/timeout)
+node index.js <cascadeId> --errors
+
 # Show raw JSON response
 node index.js <cascadeId> --raw
 ```
@@ -67,23 +70,56 @@ STEP TYPE COUNTS
 
 ---
 
-## Step Types
+## Step Types (Complete List)
 
+All step types observed in Antigravity trajectories:
+
+### User & AI Communication
 | Code | Icon | Description |
 |------|------|-------------|
 | `USER_INPUT` | 👤 | Your message to the AI |
-| `PLANNER_RESPONSE` | 🤖 | AI's text response |
-| `RUN_COMMAND` | 💻 | Terminal command to execute |
-| `CODE_ACTION` | ✏️ | File edit/creation |
-| `NOTIFY_USER` | 📢 | Message to show user |
-| `EPHEMERAL_MESSAGE` | 💭 | System message |
-| `TASK_BOUNDARY` | 📋 | Task start/update |
-| `BROWSER_SCREENSHOT` | 📸 | Browser screenshot |
-| `BROWSER_SUBAGENT` | 🌐 | Browser automation |
-| `VIEW_FILE` | 👁️ | File viewing |
-| `COMMAND_STATUS` | ⏳ | Command progress check |
-| `SEARCH` | 🔍 | Code/file search |
-| `FILE_WRITE` | 💾 | File write operation |
+| `PLANNER_RESPONSE` | 🤖 | AI's text response to user |
+| `NOTIFY_USER` | 📢 | Message/notification to show user |
+| `EPHEMERAL_MESSAGE` | � | System/internal message |
+
+### Code & Files
+| Code | Icon | Description |
+|------|------|-------------|
+| `CODE_ACTION` | ✏️ | File edit (replace_file_content, multi_replace_file_content) |
+| `FILE_WRITE` | 💾 | Create new file (write_to_file) |
+| `VIEW_FILE` | 👁️ | View file contents |
+| `VIEW_FILE_OUTLINE` | � | View file structure/outline |
+| `VIEW_CODE_ITEM` | 🔎 | View specific code item (function, class) |
+
+### Terminal & Commands
+| Code | Icon | Description |
+|------|------|-------------|
+| `RUN_COMMAND` | � | Execute terminal command |
+| `COMMAND_STATUS` | ⏳ | Check status of running command |
+| `SEND_COMMAND_INPUT` | ⌨️ | Send input to running command |
+| `READ_TERMINAL` | � | Read terminal output |
+
+### Search & Navigation
+| Code | Icon | Description |
+|------|------|-------------|
+| `SEARCH` | 🔍 | Codebase search |
+| `GREP_SEARCH` | 🔎 | Text search in files |
+| `FIND_BY_NAME` | 📂 | Find files by name pattern |
+| `LIST_DIR` | � | List directory contents |
+
+### Browser & Web
+| Code | Icon | Description |
+|------|------|-------------|
+| `BROWSER_SUBAGENT` | 🌐 | Browser automation task |
+| `BROWSER_SCREENSHOT` | � | Capture browser screenshot |
+| `READ_URL_CONTENT` | 🔗 | Fetch URL content |
+| `SEARCH_WEB` | 🌍 | Web search |
+
+### Task Management
+| Code | Icon | Description |
+|------|------|-------------|
+| `TASK_BOUNDARY` | � | Task start/update/mode change |
+| `GENERATE_IMAGE` | 🎨 | Generate image with AI |
 
 ---
 
@@ -92,9 +128,30 @@ STEP TYPE COUNTS
 | Status | Icon | Meaning |
 |--------|------|---------|
 | `DONE` | ✅ | Completed successfully |
-| `WAITING` | ⏳ | Waiting for user action |
+| `WAITING` | ⏳ | Waiting for user action (accept/reject) |
 | `RUNNING` | 🔄 | Currently executing |
-| `ERROR` | ❌ | Failed |
+| `ERROR` | ❌ | Failed with error |
+| `CANCELED` | 🚫 | Canceled by user |
+
+---
+
+## Trajectory Types
+
+| Type | Description |
+|------|-------------|
+| `CORTEX_TRAJECTORY_TYPE_CASCADE` | Main conversation trajectory |
+| `CORTEX_TRAJECTORY_TYPE_EXTENSION` | Extension-related trajectory |
+
+---
+
+## Cascade Run Statuses
+
+| Status | Description |
+|------|-------------|
+| `CASCADE_RUN_STATUS_IDLE` | Cascade is idle, waiting for input |
+| `CASCADE_RUN_STATUS_STREAMING` | AI is currently generating response |
+| `CASCADE_RUN_STATUS_BLOCKED` | Blocked waiting for user interaction |
+| `CASCADE_RUN_STATUS_COMPLETED` | Cascade has completed |
 
 ---
 
@@ -112,6 +169,22 @@ Just copy and run to accept or reject!
 
 ---
 
+## Step Metadata Fields
+
+Each step contains metadata with useful info:
+
+| Field | Description |
+|-------|-------------|
+| `createdAt` | When the step was created |
+| `viewableAt` | When the step became visible |
+| `finishedGeneratingAt` | When generation completed |
+| `source` | Who created the step (USER_EXPLICIT, MODEL) |
+| `toolCall.id` | Unique ID for this tool call |
+| `toolCall.name` | Name of the tool being called |
+| `toolCall.argumentsJson` | Arguments passed to the tool |
+
+---
+
 ## Technical Details
 
 This calls the `GetCascadeTrajectory` endpoint:
@@ -124,5 +197,8 @@ Body: { "cascadeId": "..." }
 The response contains:
 - `trajectory.trajectoryId` - Unique ID for this execution trace
 - `trajectory.cascadeId` - The conversation ID
+- `trajectory.trajectoryType` - Type of trajectory
 - `trajectory.steps[]` - Array of all steps
-- `status` - Current cascade status
+- `status` - Current cascade run status
+- `numTotalSteps` - Total number of steps
+

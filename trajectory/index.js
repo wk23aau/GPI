@@ -35,6 +35,10 @@ const STEP_STATUS = {
     'CORTEX_STEP_STATUS_WAITING': '⏳',
     'CORTEX_STEP_STATUS_RUNNING': '🔄',
     'CORTEX_STEP_STATUS_ERROR': '❌',
+    'CORTEX_STEP_STATUS_CANCELED': '🚫',
+    'CORTEX_STEP_STATUS_STOPPED': '🛑',
+    'CORTEX_STEP_STATUS_MODEL_ERROR': '💥',
+    'CORTEX_STEP_STATUS_TIMEOUT': '⌛',
 };
 
 function formatStep(step, index, showFull = false) {
@@ -84,6 +88,7 @@ async function main() {
     const showFull = process.argv.includes('--full');
     const showRaw = process.argv.includes('--raw');
     const showPending = process.argv.includes('--pending');
+    const showErrors = process.argv.includes('--errors');
 
     if (!cascadeId || cascadeId.startsWith('--')) {
         console.log('GPI Trajectory Viewer\n');
@@ -92,6 +97,7 @@ async function main() {
         console.log('  node index.js <cascadeId> --full       # Show all step details');
         console.log('  node index.js <cascadeId> --raw        # Show raw JSON');
         console.log('  node index.js <cascadeId> --pending    # Show only pending steps');
+        console.log('  node index.js <cascadeId> --errors     # Show only error steps');
         process.exit(1);
     }
 
@@ -142,6 +148,7 @@ async function main() {
     // Count step types
     const typeCounts = {};
     const pending = [];
+    const errors = [];
     for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
         const shortType = step.type?.replace('CORTEX_STEP_TYPE_', '') || 'UNKNOWN';
@@ -149,6 +156,11 @@ async function main() {
 
         if (step.status === 'CORTEX_STEP_STATUS_WAITING') {
             pending.push({ index: i, step });
+        }
+        if (step.status === 'CORTEX_STEP_STATUS_ERROR' ||
+            step.status === 'CORTEX_STEP_STATUS_MODEL_ERROR' ||
+            step.status === 'CORTEX_STEP_STATUS_TIMEOUT') {
+            errors.push({ index: i, step });
         }
     }
 
@@ -162,8 +174,22 @@ async function main() {
         });
     console.log('');
 
+    // Show error steps if any or if --errors flag
+    if (errors.length > 0) {
+        console.log('═'.repeat(60));
+        console.log(`❌ ERROR STEPS (${errors.length})`);
+        console.log('═'.repeat(60));
+        for (const { index, step } of errors) {
+            console.log(formatStep(step, index, true));
+            if (step.error?.message) {
+                console.log(`      Error: ${step.error.message}`);
+            }
+            console.log('');
+        }
+    }
+
     // Show pending steps if any
-    if (pending.length > 0) {
+    if (pending.length > 0 && !showErrors) {
         console.log('═'.repeat(60));
         console.log(`⏳ PENDING STEPS (${pending.length})`);
         console.log('═'.repeat(60));
