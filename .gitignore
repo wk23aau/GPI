@@ -1,3 +1,4 @@
 # Ignore sensitive config
 .env
 node_modules/
+backups/

@@ -17,7 +17,7 @@ import { execSync } from 'child_process';
 // Paths
 const CONVERSATIONS_PATH = path.join(os.homedir(), '.gemini', 'antigravity', 'conversations');
 const BRAIN_PATH = path.join(os.homedir(), '.gemini', 'antigravity', 'brain');
-const OUTPUT_DIR = path.join(process.cwd(), '..', '..', 'backups');
+const OUTPUT_DIR = path.join(process.cwd(), '..', 'backups');  // GPI/backups folder
 
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
