@@ -46,7 +46,7 @@ function encodeBool(field, value) {
     return Buffer.from([(field << 3) | 0, value ? 1 : 0]);
 }
 
-async function streamCascade(port, csrfToken, cascadeId, duration = 10, showRaw = false) {
+async function streamCascade(port, csrfToken, cascadeId, duration = 10, showRaw = false, showThinking = false, liveOnly = false) {
     return new Promise((resolve) => {
         // Build protobuf request
         const proto = Buffer.concat([
@@ -63,6 +63,8 @@ async function streamCascade(port, csrfToken, cascadeId, duration = 10, showRaw 
 
         const chunks = [];
         let textBuffer = '';
+        let streamStartTime = Date.now();
+        const skipMs = liveOnly ? 2000 : 0; // Skip first 2s for live mode
 
         const req = https.request({
             hostname: '127.0.0.1',
@@ -87,8 +89,53 @@ async function streamCascade(port, csrfToken, cascadeId, duration = 10, showRaw 
                     console.log(`[Chunk ${chunks.length}] ${chunk.length} bytes`);
                 }
 
+                // Skip initial history burst in live mode
+                if (liveOnly && (Date.now() - streamStartTime < skipMs)) {
+                    return;
+                }
+
                 // Extract readable text from protobuf
                 const raw = chunk.toString('latin1');
+
+                // Look for thinking content specifically
+                if (showThinking) {
+                    // Better thinking extraction
+                    const raw2 = chunk.toString('utf8');
+
+                    // Multiple patterns to catch thinking
+                    const patterns = [
+                        /"thinking"\s*:\s*"([^"]{30,})"/,
+                        /thinking[:\s]+([A-Z][a-z].{30,}?)(?=\s{3}|\\n|$)/,
+                    ];
+
+                    for (const pattern of patterns) {
+                        const match = raw2.match(pattern);
+                        if (match) {
+                            let text = match[1]
+                                .replace(/\\n/g, ' ')
+                                .replace(/\\"/g, '"')
+                                .replace(/\\\\/g, '')
+                                .replace(/\s+/g, ' ')
+                                .replace(/[^\x20-\x7E]/g, '')
+                                .trim();
+
+                            // Skip if too short, looks like code, or already seen
+                            if (text.length < 30) continue;
+                            if (text.includes('console.log') || text.includes('function')) continue;
+                            if (text.includes('CORTEX_') || text.includes('toolu_')) continue;
+                            if (text.includes('import ') || text.includes('export ')) continue;
+                            if (textBuffer.includes(text.substring(0, 40))) continue;
+
+                            // Clean up and display
+                            text = text.substring(0, 300);
+                            console.log(`\n💭 ${text}`);
+                            textBuffer += text.substring(0, 40);
+                            break;
+                        }
+                    }
+                    return;
+                }
+
                 const matches = raw.match(/[\x20-\x7E]{15,}/g) || [];
 
                 for (const text of matches) {
@@ -147,6 +194,8 @@ async function main() {
         console.log('  node index.js <cascadeId>              # Stream for 10 seconds');
         console.log('  node index.js <cascadeId> <duration>   # Stream for N seconds');
         console.log('  node index.js <cascadeId> --raw        # Show all chunks');
+        console.log('  node index.js <cascadeId> --thinking    # Show thinking only');
+        console.log('  node index.js <cascadeId> --live         # Skip history, new data only');
         console.log('\nThis shows the AI response as it generates in real-time.');
         process.exit(1);
     }
@@ -166,7 +215,9 @@ async function main() {
 
     console.log(`🔗 Port: ${port}`);
 
-    await streamCascade(port, config.csrfToken, cascadeId, duration, showRaw);
+    const showThinking = process.argv.includes('--thinking');
+    const liveOnly = process.argv.includes('--live');
+    await streamCascade(port, config.csrfToken, cascadeId, duration, showRaw, showThinking, liveOnly);
 }
 
 main().catch(console.error);

@@ -146,15 +146,23 @@ Output:
 | Module | What it does |
 |--------|--------------|
 | `listcascades/` | 📋 List all conversations |
+| `listall/` | 📋 **NEW:** List all conversations from server |
 | `startcascade/` | 🆕 Create new conversation |
 | `sendmessage/` | 📤 Send message to AI |
+| `sendwithfile/` | 📁 **NEW:** Send message with file content embedded |
+| `sendwithurl/` | 🌐 **NEW:** Fetch URL content and send to AI |
 | `getresponse/` | 📥 Fetch AI's reply (after it finishes) |
+| `getthinking/` | 💭 **NEW:** Extract AI's internal thinking |
 | `trajectory/` | 📊 View complete history (--full, --errors, --pending, --raw) |
 | `handleinteraction/` | ⚡ Accept/reject pending commands |
 | `retry/` | 🔄 Retry after error (--last) |
-| `streamcascade/` | 📡 Watch AI response in real-time |
+| `streamcascade/` | 📡 Watch AI response in real-time (--thinking, --live) |
+| `cancel/` | 🛑 **NEW:** Stop AI generation mid-stream |
+| `deletecascade/` | 🗑️ **NEW:** Permanently delete a conversation |
 | `swarm/` | 🐝 Multi-agent orchestration |
 | `autoexec/` | ⚡ Model + auto-execution control (--auto, --turbo, --model) |
+| `browsie/` | 🌐 Browser automation via CDP |
+| `savechat/` | 💾 Save conversation to file |
 | `api.js` | Core API functions |
 
 ---
@@ -188,8 +196,14 @@ if (result.ok) {
 | `discoverPort()` | Finds which port the Language Server is on |
 | `loadConfig()` | Loads your CSRF token from .env |
 | `sendMessage(port, csrf, cascadeId, message)` | Sends a chat message |
+| `sendMessageWithFile(port, csrf, cascadeId, filePath, message?)` | **NEW:** Sends with file content embedded |
+| `sendMessageWithUrl(port, csrf, cascadeId, url, message?)` | **NEW:** Fetches URL and sends content |
+| `sendWithRetry(port, csrf, cascadeId, message, config?, retries?)` | **NEW:** Sends with auto-retry on failure |
 | `getTrajectory(port, csrf, cascadeId)` | Gets conversation history |
 | `startCascade(port, csrf)` | Creates a new conversation |
+| `cancelCascadeInvocation(port, csrf, cascadeId)` | **NEW:** Stops AI mid-generation |
+| `deleteCascadeTrajectory(port, csrf, cascadeId)` | **NEW:** Permanently deletes conversation |
+| `getAllCascadeTrajectories(port, csrf)` | **NEW:** Lists all conversations from server |
 
 ---
 

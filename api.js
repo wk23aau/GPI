@@ -317,6 +317,117 @@ export function listCascades() {
     return { ok: true, data: { cascades, count: cascades.length } };
 }
 
+/**
+ * Cancel AI generation mid-stream
+ */
+export async function cancelCascadeInvocation(port, csrfToken, cascadeId) {
+    const proto = encodeString(1, cascadeId);
+    return postProto(port, csrfToken, 'CancelCascadeInvocation', proto);
+}
+
+/**
+ * Delete a conversation permanently
+ */
+export async function deleteCascadeTrajectory(port, csrfToken, cascadeId) {
+    const proto = encodeString(1, cascadeId);
+    return postProto(port, csrfToken, 'DeleteCascadeTrajectory', proto);
+}
+
+/**
+ * Get all conversations at once
+ */
+export async function getAllCascadeTrajectories(port, csrfToken) {
+    return post(port, csrfToken, 'GetAllCascadeTrajectories', {});
+}
+
+/**
+ * Send message with retry on failure
+ * @param {number} port - Language Server port
+ * @param {string} csrfToken - CSRF token
+ * @param {string} cascadeId - Cascade ID
+ * @param {string} message - Message to send
+ * @param {object} config - Optional config overrides
+ * @param {number} maxRetries - Maximum retry attempts (default: 3)
+ * @param {number} baseDelay - Base delay in ms (default: 1000)
+ */
+export async function sendWithRetry(port, csrfToken, cascadeId, message, config = {}, maxRetries = 3, baseDelay = 1000) {
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const result = await sendMessage(port, csrfToken, cascadeId, message, config);
+
+        if (result.ok) return result;
+
+        // Check if retryable
+        const retryable = [429, 500, 502, 503, 504].includes(result.status);
+        if (!retryable) return result;
+
+        lastError = result;
+
+        // Exponential backoff
+        if (attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+
+    return lastError;
+}
+
+/**
+ * Send message with file content embedded
+ * @param {number} port - Language Server port
+ * @param {string} csrfToken - CSRF token
+ * @param {string} cascadeId - Cascade ID
+ * @param {string} filePath - Path to file
+ * @param {string} message - Optional message (defaults to "Review this file")
+ * @param {object} config - Optional config overrides
+ */
+export async function sendMessageWithFile(port, csrfToken, cascadeId, filePath, message = null, config = {}) {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const fileName = path.basename(filePath);
+    const ext = path.extname(filePath).slice(1) || 'txt';
+
+    const fullMessage = message
+        ? `${message}\n\n**${fileName}:**\n\`\`\`${ext}\n${content}\n\`\`\``
+        : `Please review this file:\n\n**${fileName}:**\n\`\`\`${ext}\n${content}\n\`\`\``;
+
+    return sendMessage(port, csrfToken, cascadeId, fullMessage, config);
+}
+
+/**
+ * Send message with remote file content from URL
+ * @param {number} port - Language Server port
+ * @param {string} csrfToken - CSRF token
+ * @param {string} cascadeId - Cascade ID
+ * @param {string} url - URL to fetch
+ * @param {string} message - Optional message
+ * @param {object} config - Optional config overrides
+ */
+export async function sendMessageWithUrl(port, csrfToken, cascadeId, url, message = null, config = {}) {
+    const https = await import('https');
+    const http = await import('http');
+
+    const content = await new Promise((resolve, reject) => {
+        const client = url.startsWith('https') ? https : http;
+        client.get(url, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => resolve(data));
+            res.on('error', reject);
+        }).on('error', reject);
+    });
+
+    const fileName = url.split('/').pop() || 'remote-file';
+    const ext = fileName.split('.').pop() || 'txt';
+
+    const fullMessage = message
+        ? `${message}\n\n**[${fileName}](${url}):**\n\`\`\`${ext}\n${content}\n\`\`\``
+        : `Remote file:\n\n**[${fileName}](${url}):**\n\`\`\`${ext}\n${content}\n\`\`\``;
+
+    return sendMessage(port, csrfToken, cascadeId, fullMessage, config);
+}
+
 export default {
     loadConfig,
     saveConfig,
@@ -324,10 +435,16 @@ export default {
     post,
     postProto,
     sendMessage,
+    sendMessageWithFile,
+    sendMessageWithUrl,
+    sendWithRetry,
     getTrajectory,
     startCascade,
     acceptCommand,
     rejectCommand,
-    listCascades
+    listCascades,
+    cancelCascadeInvocation,
+    deleteCascadeTrajectory,
+    getAllCascadeTrajectories
 };
 
