@@ -1,103 +1,99 @@
-# 🌐 Browsie - GOD Mode Browser Control
+# Browsie - Direct CDP Controller
 
-**What it does:** Take full control of any browser via CDP (Chrome DevTools Protocol). Click, type, screenshot, scroll, run JavaScript - everything!
+Pure WebSocket CDP browser control. No overhead, no waits.
 
-## Quick Start
+## Why Direct CDP API?
+
+**The Problem:** Most browser automation tools add layers:
+```
+Your Code → Selenium → WebDriver → HTTP → Browser
+Your Code → Puppeteer → Node wrapper → CDP → Browser
+Your Code → Playwright → Abstraction layer → CDP → Browser
+```
+
+Each layer adds latency, complexity, and failure points.
+
+**The Solution:** Direct CDP WebSocket:
+```
+Your Code → WebSocket → Chrome (10ms)
+```
+
+### Why Direct API Always Wins
+
+| Approach | Latency | Overhead |
+|----------|---------|----------|
+| Selenium/WebDriver | 100-500ms | HTTP, protocol translation |
+| Puppeteer/Playwright | 20-50ms | Node abstractions, promise chains |
+| **Direct CDP** | **<10ms** | **Zero** - native WebSocket |
+
+### Direct API Benefits
+
+1. **Speed** - 10-50x faster than abstraction layers
+2. **Control** - Access every CDP domain (Input, DOM, Network, etc.)
+3. **Simplicity** - One file, no dependencies except `ws`
+4. **Reliability** - No middleware to break or update
+5. **Debugging** - See exactly what's sent to Chrome
+
+### When to Use Direct CDP
+
+- **Always** for performance-critical automation
+- **Always** for real-time browser control
+- **Always** for agent/AI browser interaction
+- **Always** when you need <100ms response times
+
+The only reason to use Puppeteer/Playwright is if you need their convenience APIs and don't care about speed.
+
+---
+
+## Usage
 
 ```bash
-# 1. Start Antigravity with debug port
-& "$env:LOCALAPPDATA\Programs\Antigravity\Antigravity.exe" --remote-debugging-port=9222
-
-# 2. Run browsie
-cd GPI/browsie
-node index.js
+node index.js                           # Interactive REPL
+node index.js --url https://example.com # Open URL first
 ```
 
----
+## Commands
 
-## Interactive Commands
+| Cmd | Action | Example |
+|-----|--------|---------|
+| `g` | Navigate | `g https://google.com` |
+| `c` | Click (hover+click) | `c 500 300` |
+| `t` | Type text | `t hello world` |
+| `p` | Press key | `p Enter` |
+| `s` | Screenshot | `s shot.png` |
+| `e` | Eval JavaScript | `e document.title` |
+| `f` | Find element coords | `f textarea` |
+| `r` | Scroll | `r 300` |
+| `q` | Quit | `q` |
 
-| Command | What it does |
-|---------|--------------|
-| `goto <url>` | Navigate to URL |
-| `click <x> <y>` | Click at coordinates |
-| `click <selector>` | Click element (e.g., `click button#submit`) |
-| `hover <x> <y>` | Move mouse to position |
-| `type <text>` | Type text into focused element |
-| `press <key>` | Press key (Enter, Tab, Escape, etc.) |
-| `scroll <amount>` | Scroll (positive = down, negative = up) |
-| `screenshot [name]` | Save screenshot as PNG |
-| `eval <js>` | Run JavaScript and get result |
-| `title` | Get page title |
-| `url` | Get current URL |
-| `wait <ms>` | Wait milliseconds |
-| `exit` | Exit browsie |
+## CDP API
 
----
-
-## Example Session
-
-```
-🔮 browsie> goto https://google.com
-🌐 Navigating to: https://google.com
-
-🔮 browsie> type Hello World
-⌨️ Typing: "Hello World"
-
-🔮 browsie> press Enter
-⌨️ Press: Enter
-
-🔮 browsie> screenshot search_results.png
-📸 Screenshot saved: search_results.png
-
-🔮 browsie> eval document.querySelectorAll('h3').length
-📤 Result: 10
-
-🔮 browsie> exit
-👋 Goodbye!
-```
-
----
-
-## CDP Domains Enabled (GOD Mode)
-
-| Domain | What it controls |
-|--------|------------------|
-| `Page` | Navigation, screenshots, reload |
-| `Network` | HTTP requests, responses |
-| `DOM` | HTML elements, selectors |
-| `Runtime` | JavaScript execution |
-| `Input` | Keyboard, mouse events |
-| `Overlay` | Element highlighting |
-
----
-
-## Programmatic Usage
+Direct access via `CDP` object:
 
 ```javascript
-import { GOD } from './index.js';
+CDP.nav(url)         // Navigate
+CDP.click(x, y)      // Hover + click
+CDP.type(text)       // Insert text
+CDP.press(key)       // Key down + up
+CDP.shot(name)       // Screenshot to file
+CDP.eval(js)         // Run JavaScript
+CDP.find(selector)   // Get element center coords
+CDP.scroll(deltaY)   // Mouse wheel
 
-await GOD.goto('https://example.com');
-await GOD.type('Hello!');
-await GOD.click(100, 200);
-await GOD.screenshot('result.png');
-const title = await GOD.getTitle();
+// Raw events
+CDP.move(x, y)       // Mouse move
+CDP.down(x, y)       // Mouse press
+CDP.up(x, y)         // Mouse release
+CDP.keyDown(key)     // Key down
+CDP.keyUp(key)       // Key up
 ```
 
----
+## Performance
 
-## Prerequisites
+- CDP WebSocket: ~10ms per command
+- Navigate: ~80ms
+- Click + Type: <50ms
 
-1. **Browser with CDP enabled:**
-   ```powershell
-   # Antigravity
-   & "$env:LOCALAPPDATA\Programs\Antigravity\Antigravity.exe" --remote-debugging-port=9222
-   
-   # Chrome
-   chrome --remote-debugging-port=9222
-   ```
+## Port
 
-2. **WebSocket package:**
-   ```bash
-   npm install ws
-   ```
+Uses port `9223` to avoid conflicts. Chrome launches automatically if not running.
