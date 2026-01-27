@@ -134,7 +134,12 @@ export async function sendMessage(port, csrfToken, cascadeId, message) {
                 toolConfig: {
                     runCommand: {
                         autoCommandConfig: {
-                            autoExecutionPolicy: 'CASCADE_COMMANDS_AUTO_EXECUTION_OFF'
+                            autoExecutionPolicy: 'CASCADE_COMMANDS_AUTO_EXECUTION_ALWAYS'
+                        }
+                    },
+                    sendCommandInput: {
+                        autoCommandConfig: {
+                            autoExecutionPolicy: 'CASCADE_COMMANDS_AUTO_EXECUTION_ALWAYS'
                         }
                     },
                     notifyUser: {
@@ -166,6 +171,29 @@ export async function startCascade(port, csrfToken) {
             locale: 'en',
             ideVersion: '1.15.8',
             extensionName: 'antigravity'
+        },
+        cascadeConfig: {
+            plannerConfig: {
+                conversational: {
+                    plannerMode: 'CONVERSATIONAL_PLANNER_MODE_DEFAULT',
+                    agenticMode: true
+                },
+                toolConfig: {
+                    runCommand: {
+                        autoCommandConfig: {
+                            autoExecutionPolicy: 'CASCADE_COMMANDS_AUTO_EXECUTION_ALWAYS'
+                        }
+                    },
+                    sendCommandInput: {
+                        autoCommandConfig: {
+                            autoExecutionPolicy: 'CASCADE_COMMANDS_AUTO_EXECUTION_ALWAYS'
+                        }
+                    },
+                    notifyUser: {
+                        artifactReviewMode: 'ARTIFACT_REVIEW_MODE_ALWAYS'
+                    }
+                }
+            }
         }
     });
 }
@@ -277,6 +305,54 @@ export async function rejectCommand(port, csrfToken, cascadeId, trajectoryId, st
 
     const actionDetails = Buffer.concat([
         encodeInt(1, 2),  // action_type = 2 (reject)
+    ]);
+
+    const protoBody = Buffer.concat([
+        encodeString(4, cascadeId),
+        encodeNested(2, trajectoryInfo),
+        encodeNested(5, actionDetails),
+    ]);
+
+    return postProto(port, csrfToken, 'HandleCascadeUserInteraction', protoBody);
+}
+
+/**
+ * Accept a pending send_command_input (uses "send input confirmation" type)
+ */
+export async function acceptSendInput(port, csrfToken, cascadeId, trajectoryId, stepIndex, input = '') {
+    const trajectoryInfo = Buffer.concat([
+        encodeString(1, trajectoryId),
+        encodeInt(2, stepIndex),
+    ]);
+
+    // Try action_type = 3 for "send input confirmation"
+    const actionDetails = Buffer.concat([
+        encodeInt(1, 3),  // action_type = 3 (send input confirmation)
+        encodeString(2, input),
+    ]);
+
+    const protoBody = Buffer.concat([
+        encodeString(4, cascadeId),
+        encodeNested(2, trajectoryInfo),
+        encodeNested(5, actionDetails),
+    ]);
+
+    return postProto(port, csrfToken, 'HandleCascadeUserInteraction', protoBody);
+}
+
+/**
+ * Accept a pending run_command (uses "run command confirmation" type)
+ */
+export async function acceptRunCommand(port, csrfToken, cascadeId, trajectoryId, stepIndex, command = '') {
+    const trajectoryInfo = Buffer.concat([
+        encodeString(1, trajectoryId),
+        encodeInt(2, stepIndex),
+    ]);
+
+    // Try action_type = 4 for "run command confirmation"
+    const actionDetails = Buffer.concat([
+        encodeInt(1, 4),  // action_type = 4 (run command confirmation)
+        encodeString(2, command),
     ]);
 
     const protoBody = Buffer.concat([
@@ -441,6 +517,8 @@ export default {
     getTrajectory,
     startCascade,
     acceptCommand,
+    acceptSendInput,
+    acceptRunCommand,
     rejectCommand,
     listCascades,
     cancelCascadeInvocation,

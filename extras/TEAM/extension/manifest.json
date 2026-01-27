@@ -1,0 +1,28 @@
+{
+    "manifest_version": 3,
+    "name": "CDP Full Protocol",
+    "version": "2.0.0",
+    "description": "Robust agent coordination with persistence, protocol fields, and early injection",
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "tabs",
+        "storage"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "main.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}

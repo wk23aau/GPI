@@ -1,0 +1,157 @@
+{
+  "current": {
+    "url": "https://www.ziprecruiter.co.uk/jobs/search?utm_source=zr-go-redirect",
+    "title": "63284 Jobs found | ZipRecruiter",
+    "site": "ziprecruiter",
+    "uiCount": 19,
+    "jobsVisible": [
+      {
+        "title": "DragonFire Physical Domain V&V lead",
+        "x": 183,
+        "y": 487
+      },
+      {
+        "title": "Estimator",
+        "x": 64,
+        "y": 691
+      },
+      {
+        "title": "CNC Turner - Motorsport",
+        "x": 129,
+        "y": 895
+      }
+    ],
+    "ts": 1769514141428
+  },
+  "visionAnalysis": {
+    "timestamp": "2026-01-27T11:42:21Z",
+    "description": "ZipRecruiter UK job search - cookie consent blocking",
+    "pageType": "job-search-results",
+    "change": {
+      "from": "Indeed.com",
+      "to": "ZipRecruiter UK",
+      "type": "navigation"
+    },
+    "blocking": {
+      "type": "cookie-consent",
+      "element": "Cookie consent dialog",
+      "buttons": [
+        "Accept",
+        "Decline All",
+        "Manage Settings"
+      ]
+    },
+    "forms": [
+      {
+        "name": "job_alert_email",
+        "type": "email",
+        "placeholder": "Email Address",
+        "position": {
+          "x": 139,
+          "y": 193
+        }
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Accept",
+        "id": "truste-consent-button",
+        "position": {
+          "x": 215,
+          "y": 778
+        },
+        "note": "CLICK THIS to dismiss cookie dialog"
+      },
+      {
+        "text": "Decline All",
+        "id": "truste-consent-required",
+        "position": {
+          "x": 215,
+          "y": 827
+        }
+      },
+      {
+        "text": "Create Alert",
+        "position": {
+          "x": 354,
+          "y": 193
+        }
+      },
+      {
+        "text": "New search",
+        "position": {
+          "x": 93,
+          "y": 287
+        }
+      },
+      {
+        "text": "Refine search",
+        "position": {
+          "x": 322,
+          "y": 287
+        }
+      }
+    ],
+    "jobs": [
+      {
+        "title": "DragonFire Physical Domain V&V lead",
+        "position": {
+          "x": 183,
+          "y": 487
+        }
+      },
+      {
+        "title": "Estimator",
+        "position": {
+          "x": 64,
+          "y": 691
+        }
+      },
+      {
+        "title": "CNC Turner - Motorsport",
+        "position": {
+          "x": 129,
+          "y": 895
+        }
+      }
+    ],
+    "errors": [],
+    "suggestions": [
+      "STEP 1: Click Accept button at (215, 778) to dismiss cookie consent",
+      "STEP 2: These are NOT QA jobs - need to search for QA jobs",
+      "STEP 3: Click 'New search' at (93, 287) and search for QA Engineer"
+    ],
+    "nextAction": {
+      "action": "click",
+      "target": "Accept cookie button",
+      "x": 215,
+      "y": 778,
+      "reason": "Cookie consent blocking interaction"
+    }
+  },
+  "history": [
+    {
+      "url": "https://www.indeed.com/jobs?q=QA+engineer",
+      "site": "indeed",
+      "jobsFound": 1,
+      "ts": 1769514048000
+    }
+  ],
+  "lastAction": "navigation",
+  "task": {
+    "goal": "Find 5 QA jobs from 4 different sites with description, title, salary",
+    "sitesNeeded": [
+      "indeed",
+      "linkedin",
+      "glassdoor",
+      "ziprecruiter"
+    ],
+    "sitesVisited": [
+      "indeed",
+      "ziprecruiter"
+    ],
+    "jobsCollected": 0,
+    "targetJobs": 5,
+    "note": "Current page shows general jobs, not QA - need to search"
+  }
+}
