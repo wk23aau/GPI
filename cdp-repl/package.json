@@ -1,0 +1,13 @@
+{
+    "name": "cdp-repl",
+    "version": "1.0.0",
+    "description": "CDP REPL - Direct Chrome DevTools Protocol for AI automation",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "ws": "^8.0.0"
+    }
+}

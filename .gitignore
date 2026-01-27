@@ -1,4 +1,22 @@
-# Ignore sensitive config
+# Sensitive
 .env
+
+# Dependencies
 node_modules/
+
+# Chrome profile (large, session data)
+extras/chrome-profile/
+chrome-profile/
+
+# Generated images
+*.jpg
+*.png
+*.webp
+*.gif
+
+# Backups
 backups/
+
+# OS
+.DS_Store
+Thumbs.db
