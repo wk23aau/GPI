@@ -74,6 +74,28 @@ CDP REPL
 | `__cdp.focused()` | Element | Currently focused element |
 | `__cdp.ssName(prefix)` | string | Screenshot filename with timestamp |
 | `__cdp.scan()` | number | Force rescan, returns element count |
+| `__cdp.moveTo(x,y,ms)` | Promise | Animate cursor to (x,y) with jitter |
+| `__cdp.cursor.show()` | string | Show cursor |
+| `__cdp.cursor.hide()` | string | Hide cursor |
+| `__cdp.cursor.set(x,y)` | {x,y} | Instantly set cursor position |
+| `__cdp.cursor.pos()` | {x,y} | Get current cursor position |
+
+## Cursor Animation
+
+Visible cursor with human-like jittering trajectory for demos:
+
+```javascript
+__cdp.cursor.set(50, 50)        // Position cursor at start
+__cdp.moveTo(300, 320, 2000)    // Animate to target (2s, 8-12 steps with jitter)
+__cdp.cursor.pos()              // → {x:300, y:320}
+__cdp.cursor.hide()             // Remove cursor when done
+```
+
+**Features:**
+- White arrow pointer with black outline (looks like default cursor)
+- 8-12 random steps per animation
+- Ease-out curve (fast start, slow finish)
+- Decreasing jitter as cursor approaches target
 
 ## WorldState Object
 
@@ -99,3 +121,37 @@ CDP REPL
     ts: number  // last update timestamp
 }
 ```
+
+## Minimal Flow (Recommended)
+
+Skip `isIdle()` - let `ui()` act as both readiness check AND element finder:
+
+```javascript
+Page.navigate {"url":"https://www.google.com"}
+__cdp.ui().find(e => e.tag === 'textarea')  // Returns element or null
+Input.dispatchMouseEvent {"type":"mousePressed","x":177,"y":316,...}
+Input.dispatchMouseEvent {"type":"mouseReleased",...}
+Input.insertText {"text":"search query"}
+Input.dispatchKeyEvent {"type":"keyDown","key":"Enter",...}
+Page.captureScreenshot {"format":"jpeg","quality":50}
+```
+
+**7 commands total** - no polling, no isIdle() overhead.
+
+## Latency Benchmarks
+
+| Flow | Commands | Wall Time |
+|------|----------|-----------|
+| With isIdle() checks | 9 | ~4.5s |
+| **Minimal (no isIdle)** | **7** | **~3.5s** |
+| Without extension | 9 + polling | ~6s+ |
+
+**Key insight:** `ui()` returns null if page not ready → retry once. No separate isIdle() needed.
+
+## Why Skip isIdle()?
+
+- `ui()` already tells you if the element exists
+- Each extra call = ~50ms round-trip
+- On fast networks, page loads before you ask
+- Simpler flow = fewer failure points
+

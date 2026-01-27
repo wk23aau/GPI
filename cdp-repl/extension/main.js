@@ -132,6 +132,87 @@
     });
 
     // ═══════════════════════════════════════════════════════════════
+    // VISIBLE CURSOR - Human-like jittering trajectory
+    // ═══════════════════════════════════════════════════════════════
+
+    let cursorEl = null;
+    let cursorPos = { x: 0, y: 0 };
+    let isMoving = false;
+
+    function createCursor() {
+        if (cursorEl) return cursorEl;
+        cursorEl = document.createElement('div');
+        cursorEl.id = '__cdp_cursor';
+        cursorEl.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            z-index: 999999;
+            transform: translate(0, 0);
+            transition: none;
+            font-size: 24px;
+            line-height: 1;
+            filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+        `;
+        // Default arrow cursor using SVG
+        cursorEl.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 3L19 12L12 13L9 20L5 3Z" fill="white" stroke="black" stroke-width="1.5"/>
+        </svg>`;
+        document.body.appendChild(cursorEl);
+        return cursorEl;
+    }
+
+    function updateCursorPosition(x, y) {
+        if (!cursorEl) createCursor();
+        cursorPos = { x, y };
+        cursorEl.style.left = x + 'px';
+        cursorEl.style.top = y + 'px';
+    }
+
+    // Move cursor with jittering trajectory
+    function moveTo(targetX, targetY, durationMs = 800) {
+        return new Promise((resolve) => {
+            if (isMoving) { resolve({ status: 'busy' }); return; }
+            isMoving = true;
+            createCursor();
+
+            const startX = cursorPos.x || 100;
+            const startY = cursorPos.y || 100;
+            const steps = 8 + Math.floor(Math.random() * 5); // 8-12 steps
+            const stepTime = durationMs / steps;
+            let step = 0;
+
+            function animate() {
+                step++;
+                const progress = step / steps;
+                // Ease-out curve
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                // Base position
+                let x = startX + (targetX - startX) * ease;
+                let y = startY + (targetY - startY) * ease;
+
+                // Add jitter (decreasing as we approach target)
+                const jitter = (1 - progress) * 8;
+                x += (Math.random() - 0.5) * jitter;
+                y += (Math.random() - 0.5) * jitter;
+
+                updateCursorPosition(Math.round(x), Math.round(y));
+
+                if (step < steps) {
+                    setTimeout(animate, stepTime);
+                } else {
+                    // Final snap to exact target
+                    updateCursorPosition(targetX, targetY);
+                    isMoving = false;
+                    resolve({ status: 'done', x: targetX, y: targetY, steps });
+                }
+            }
+
+            animate();
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // EXPOSE TO WINDOW
     // ═══════════════════════════════════════════════════════════════
 
@@ -139,9 +220,20 @@
         world: WorldState,
         ...Helpers,
         scan: () => { scanUI(); return WorldState.uiMap.length; },
-        v: '1.0.0'
+
+        // Cursor controls
+        cursor: {
+            show: () => { createCursor(); return 'visible'; },
+            hide: () => { if (cursorEl) cursorEl.remove(); cursorEl = null; return 'hidden'; },
+            pos: () => cursorPos,
+            set: (x, y) => { updateCursorPosition(x, y); return cursorPos; },
+            isMoving: () => isMoving
+        },
+        moveTo: moveTo,
+
+        v: '1.1.0'
     };
 
     scanUI();
-    console.log('[CDP WorldState] Ready:', WorldState.uiMap.length, 'elements');
+    console.log('[CDP WorldState] Ready:', WorldState.uiMap.length, 'elements, cursor enabled');
 })();
