@@ -1,0 +1,27 @@
+{
+    "manifest_version": 3,
+    "name": "CDP WorldState",
+    "version": "1.0.0",
+    "description": "Push-based WorldState for CDP REPL - streams UI map, actions, events",
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "tabs"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "main.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}
