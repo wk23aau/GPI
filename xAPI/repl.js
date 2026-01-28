@@ -13,7 +13,7 @@ const HELP = `
     
   Conversation:
     newchat      - New conversation (Ctrl+Shift+L)
-    focus        - Focus chat (Ctrl+L)
+    panel        - Toggle chat panel (Ctrl+Alt+B)
     agent        - Trigger agent (Ctrl+Shift+I)
     switch <n>   - Switch to conversation #n
     list         - List conversations
@@ -106,9 +106,9 @@ async function main() {
                         console.log('✓ New chat (Ctrl+Shift+L)');
                         break;
 
-                    case 'focus':
-                        await client.focusChat();
-                        console.log('✓ Focused (Ctrl+L)');
+                    case 'panel':
+                        await client.toggleChatPanel();
+                        console.log('✓ Panel toggled (Ctrl+Alt+B)');
                         break;
 
                     case 'agent':
