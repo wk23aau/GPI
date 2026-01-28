@@ -1,9 +1,9 @@
 {
-  "pid": 27340,
-  "wsUrl": "ws://127.0.0.1:9222/devtools/page/3627BA14216FB9D0882448B532866E10",
-  "targetUrl": "https://www.sandersonplc.com/job/qa-automation-engineer-tester-playwright-remote-203402_1765816064/",
-  "targetTitle": "qa-automation-engineer-tester-playwright-remote-203402_1765816064 - Sanderson Plc",
-  "startedAt": 1769534200206,
+  "pid": 26908,
+  "wsUrl": "ws://127.0.0.1:9222/devtools/page/A079E893FCA535BF89AB956B7B5A0BC0",
+  "targetUrl": "devtools://devtools/bundled/devtools_app.html?remoteBase=https://chrome-devtools-frontend.appspot.com/serve_file/@f15f401fb04924bb6505c6146a0dc3deb154b505/&can_dock=true&toolbarColor=rgba(223,223,223,1)&textColor=rgba(0,0,0,1)&experiments=true",
+  "targetTitle": "DevTools",
+  "startedAt": 1769560556340,
   "port": 9222,
   "httpPort": 9223
 }

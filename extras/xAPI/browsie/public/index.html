@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browsie - Browser Automation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 Browsie</h1>
+            <span id="status" class="status disconnected">Disconnected</span>
+        </header>
+
+        <main>
+            <div class="left-panel">
+                <div class="task-input">
+                    <h2>Task</h2>
+                    <textarea id="taskInput" placeholder="Enter your automation task...
+Example: Go to indeed.com and search for software engineer jobs"></textarea>
+                    <button id="sendBtn">▶ Execute Task</button>
+                </div>
+
+                <div class="logs">
+                    <h2>Agent Response</h2>
+                    <div id="logOutput"></div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <h2>Browser Preview</h2>
+                <div class="preview-container">
+                    <div id="pageInfo"></div>
+                    <img id="preview" alt="Browser preview will appear here">
+                    <div id="noPreview">No preview available. Start a task to see browser.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

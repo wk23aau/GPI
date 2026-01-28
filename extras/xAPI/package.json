@@ -1,0 +1,14 @@
+{
+    "name": "xapi",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "CDP-based Antigravity Control API",
+    "main": "index.js",
+    "scripts": {
+        "repl": "node repl.js",
+        "test": "node index.js send \"xAPI test message\""
+    },
+    "dependencies": {
+        "ws": "^8.18.0"
+    }
+}
