@@ -1,0 +1,20 @@
+{
+    "name": "xod",
+    "version": "1.0.0",
+    "description": "XOD - 30 Hz Real-Time Browser Automation",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "test": "node test.js"
+    },
+    "keywords": [
+        "cdp",
+        "automation",
+        "realtime"
+    ],
+    "license": "MIT",
+    "dependencies": {
+        "ws": "^8.19.0"
+    }
+}

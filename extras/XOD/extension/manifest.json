@@ -1,0 +1,29 @@
+{
+    "manifest_version": 3,
+    "name": "XOD Agent",
+    "version": "1.0.0",
+    "description": "Real-time page perception for XOD automation",
+    "permissions": [
+        "activeTab",
+        "scripting"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_start",
+            "all_frames": true
+        }
+    ],
+    "icons": {}
+}
