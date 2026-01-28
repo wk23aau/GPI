@@ -5,7 +5,7 @@
  * never blocking on models or slow operations.
  */
 
-import { glide, click, type, key, sleep } from './input.js';
+import { glide, bezier, click, type, key, sleep } from './input.js';
 import { moveCursor, clickRipple, highlightRect } from './overlay.js';
 
 export class Executor {
@@ -24,8 +24,13 @@ export class Executor {
             viewport: { w: 0, h: 0 },
             scroll: { x: 0, y: 0 },
             loading: false,
-            watches: new Map()
+            watches: new Map(),
+            lastClickFailed: false
         };
+
+        // Escalation handler (set by main)
+        this.escalation = null;
+        this.lastUrl = '';
 
         // Action queue with priorities
         this.actionQueue = [];
@@ -62,14 +67,32 @@ export class Executor {
         const tickStart = Date.now();
 
         try {
+            // 0. Check CDP connection
+            if (!this.cdp.connected) {
+                console.warn('[XOD] CDP disconnected, stopping executor');
+                this.stop();
+                return;
+            }
+
             // 1. Drain deltas from page agent
             await this._drainDeltas();
 
-            // 2. Check reflexes (fast local rules)
+            // 2. Check for navigation (escalation trigger)
+            if (this.escalation && this.state.url !== this.lastUrl) {
+                this.escalation.checkNavigation(this.lastUrl, this.state.url);
+                this.lastUrl = this.state.url;
+            }
+
+            // 3. Check reflexes (fast local rules)
             await this._checkReflexes();
 
-            // 3. Execute queued actions (budget limited)
-            await this._executeActions();
+            // 4. Execute queued actions (budget limited)
+            const actionExecuted = await this._executeActions();
+
+            // 5. Check for stuck state (escalation trigger)
+            if (this.escalation) {
+                this.escalation.checkStuck(actionExecuted, this.actionQueue.length > 0);
+            }
 
         } catch (err) {
             console.error('[XOD] Tick error:', err.message);
@@ -135,13 +158,32 @@ export class Executor {
 
     async _executeActions() {
         const budgetStart = Date.now();
+        let executed = false;
 
         while (this.actionQueue.length > 0) {
             if (Date.now() - budgetStart > this.actionBudgetMs) break;
 
             const action = this.actionQueue.shift();
-            await this._executeAction(action);
+            try {
+                await this._executeAction(action);
+                executed = true;
+                this.state.lastClickFailed = false;
+
+                // Report success to escalation
+                if (this.escalation) {
+                    this.escalation.checkRepeatedFailures(action, true);
+                }
+            } catch (err) {
+                console.error(`[XOD] Action ${action.type} failed:`, err.message);
+                this.state.lastClickFailed = (action.type === 'click');
+
+                // Report failure to escalation
+                if (this.escalation) {
+                    this.escalation.checkRepeatedFailures(action, false);
+                }
+            }
         }
+        return executed;
     }
 
     async _executeAction(action) {
@@ -150,6 +192,12 @@ export class Executor {
         switch (action.type) {
             case 'glide':
                 await glide(send, action.from, action.to, action.steps, action.ms);
+                await moveCursor(send, action.to.x, action.to.y);
+                this.state.mousePos = action.to;
+                break;
+
+            case 'bezier':
+                await bezier(send, action.from, action.to, action.steps, action.ms);
                 await moveCursor(send, action.to.x, action.to.y);
                 this.state.mousePos = action.to;
                 break;
@@ -195,19 +243,39 @@ export class Executor {
     // ═══════════════════════════════════════════════════════════════════════
 
     async glideTo(x, y, steps = 25, ms = 140) {
+        const send = (method, params) => this.cdp.send(method, params);
+        const from = this.state.mousePos;
+        const to = { x, y };
+
+        // Execute glide directly (not queued)
+        await glide(send, from, to, steps, ms);
+        await moveCursor(send, to.x, to.y);
+        this.state.mousePos = to;
+    }
+
+    async bezierTo(x, y, steps = 30, ms = 180) {
+        const send = (method, params) => this.cdp.send(method, params);
+        const from = this.state.mousePos;
+        const to = { x, y };
+
+        // Execute bezier curve directly (not queued)
+        await bezier(send, from, to, steps, ms);
+        await moveCursor(send, to.x, to.y);
+        this.state.mousePos = to;
+    }
+
+    async clickAt(x, y) {
+        // Enqueue glide first
         this.enqueue({
             type: 'glide',
             from: this.state.mousePos,
             to: { x, y },
-            steps,
-            ms
+            steps: 25,
+            ms: 140
         }, 10);
-    }
 
-    async clickAt(x, y) {
-        await this.glideTo(x, y);
-        await sleep(50);
-        this.enqueue({ type: 'click', x, y }, 10);
+        // Enqueue click with slightly lower priority so glide completes first
+        this.enqueue({ type: 'click', x, y }, 9);
     }
 
     async typeText(text) {

@@ -67,17 +67,17 @@ export class Escalation {
 
     /**
      * Stuck detection
-     * No progress for N ticks
+     * No progress for N ticks - only when actions are pending
      */
-    checkStuck(progressMade) {
-        if (progressMade) {
+    checkStuck(progressMade, hasPendingActions = false) {
+        if (progressMade || !hasPendingActions) {
             this.stuckTicks = 0;
         } else {
             this.stuckTicks++;
-            if (this.stuckTicks >= 100) { // ~3 seconds at 30 Hz
+            if (this.stuckTicks >= 300) { // ~10 seconds at 30 Hz
                 this._escalate('stuck', {
                     ticks: this.stuckTicks,
-                    reason: 'No progress detected for 3 seconds'
+                    reason: 'No progress detected for 10 seconds with pending actions'
                 });
                 this.stuckTicks = 0;
             }

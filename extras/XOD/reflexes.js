@@ -11,28 +11,54 @@
  */
 export const cookieBanner = {
     name: 'cookie-banner',
+    // Valid CSS selectors only
     selectors: [
         'button[id*="accept"]',
         'button[class*="accept"]',
         'button[class*="consent"]',
         '[id*="cookie"] button',
-        '[class*="cookie"] button',
-        'button:contains("Accept")',
-        'button:contains("I agree")',
-        'button:contains("Got it")'
+        '[class*="cookie"] button'
     ],
+    // Text patterns to match (case-insensitive)
+    textPatterns: ['accept', 'i agree', 'got it', 'allow', 'ok', 'consent'],
+
     condition(state) {
-        return state.watches.get('__cookie_banner__')?.visible;
+        // Check for cookie-related elements being visible
+        return state.watches.get('[class*="cookie"]')?.visible ||
+            state.watches.get('[id*="cookie"]')?.visible;
     },
     async action(executor) {
+        const patterns = this.textPatterns;
+        const sels = this.selectors;
         const result = await executor.cdp.eval(`
             (function() {
-                const sels = ${JSON.stringify(this.selectors)};
+                const sels = ${JSON.stringify(sels)};
+                const patterns = ${JSON.stringify(patterns)};
+                
+                // First try CSS selectors
                 for (const sel of sels) {
-                    const el = document.querySelector(sel);
-                    if (el) {
-                        const r = el.getBoundingClientRect();
-                        if (r.width > 0) return { x: r.x + r.width/2, y: r.y + r.height/2 };
+                    try {
+                        const el = document.querySelector(sel);
+                        if (el) {
+                            const r = el.getBoundingClientRect();
+                            if (r.width > 0 && r.height > 0) {
+                                return { x: r.x + r.width/2, y: r.y + r.height/2 };
+                            }
+                        }
+                    } catch(e) {}
+                }
+                
+                // Then try text matching on buttons
+                const buttons = document.querySelectorAll('button, [role="button"], a[class*="btn"]');
+                for (const btn of buttons) {
+                    const text = (btn.innerText || btn.textContent || '').toLowerCase().trim();
+                    for (const pattern of patterns) {
+                        if (text.includes(pattern)) {
+                            const r = btn.getBoundingClientRect();
+                            if (r.width > 0 && r.height > 0) {
+                                return { x: r.x + r.width/2, y: r.y + r.height/2 };
+                            }
+                        }
                     }
                 }
                 return null;
@@ -82,7 +108,10 @@ export const modalEscape = {
     ],
 
     condition(state) {
-        return state.watches.get('__modal__')?.visible;
+        // Check actual watched selectors
+        return state.watches.get('[role="dialog"]')?.visible ||
+            state.watches.get('.modal')?.visible ||
+            state.watches.get('[class*="modal"]')?.visible;
     },
 
     async action(executor) {
@@ -139,12 +168,24 @@ export const loadingWait = {
 export function setupDefaultReflexes(executor) {
     // Watch for common patterns
     executor.watch('[class*="cookie"]');
+    executor.watch('[id*="cookie"]');
     executor.watch('[role="dialog"]');
     executor.watch('.modal');
+    executor.watch('[class*="modal"]');
 
-    // Note: Cookie banner and modal reflexes need the page agent
-    // to detect visibility first. These are patterns, actual detection
-    // happens via the watch system.
+    // Register the reflex handlers
+    executor.addReflex(cookieBanner.name,
+        (state) => cookieBanner.condition(state),
+        (exec) => cookieBanner.action(exec)
+    );
+    executor.addReflex(modalEscape.name,
+        (state) => modalEscape.condition(state),
+        (exec) => modalEscape.action(exec)
+    );
+    executor.addReflex(loadingWait.name,
+        (state) => loadingWait.condition(state),
+        (exec) => loadingWait.action(exec)
+    );
 
     console.log('[XOD] Default reflexes configured');
 }

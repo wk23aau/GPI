@@ -1,98 +1,184 @@
 /**
- * XOD Cursor Overlay - Visual cursor for demos and debugging
+ * XOD Cursor Overlay - Canvas-based CAD-style crosshairs
  * 
- * Injectable script that draws a fake cursor, click ripples, and highlights.
+ * Uses Canvas + requestAnimationFrame for 60fps smooth rendering.
+ * Crosshairs are infinite lines that intersect at cursor position.
  */
 
 export const OVERLAY_SCRIPT = `
 (function() {
-    if (window.__XOD_CURSOR__) return;
+    // Clean up any legacy overlay elements from previous versions
+    ['__xod_cursor__', '__xod_ripples__', '__xod_highlight__', '__xod_crosshairs__', '__xod_vline__', '__xod_hline__', '__xod_coords__', '__xod_canvas__', '__xod_hide_cursor__'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    });
+    
+    // Reset the API to force re-injection
+    delete window.__XOD_CURSOR__;
+    delete window.__XOD_POS__;
     
     // ═══════════════════════════════════════════════════════════════════════
-    // Cursor Element
+    // Global cursor position - set by executor via CDP
     // ═══════════════════════════════════════════════════════════════════════
     
-    const cursor = document.createElement('div');
-    cursor.id = '__xod_cursor__';
-    cursor.innerHTML = \`
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M5 2L19 12L12 13L9 21L5 2Z" fill="#000" stroke="#fff" stroke-width="1.5"/>
-        </svg>
-    \`;
-    Object.assign(cursor.style, {
+    window.__XOD_POS__ = { x: 0, y: 0 };
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // Canvas Overlay Setup
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    const canvas = document.createElement('canvas');
+    canvas.id = '__xod_canvas__';
+    const ctx = canvas.getContext('2d', { alpha: true });
+    
+    Object.assign(canvas.style, {
         position: 'fixed',
-        top: '0',
         left: '0',
-        width: '24px',
-        height: '24px',
-        pointerEvents: 'none',
-        zIndex: '999999',
-        transform: 'translate(-2px, -2px)',
-        transition: 'none'
-    });
-    
-    // ═══════════════════════════════════════════════════════════════════════
-    // Click Ripple Container
-    // ═══════════════════════════════════════════════════════════════════════
-    
-    const rippleContainer = document.createElement('div');
-    rippleContainer.id = '__xod_ripples__';
-    Object.assign(rippleContainer.style, {
-        position: 'fixed',
         top: '0',
-        left: '0',
-        width: '100%',
-        height: '100%',
+        width: '100vw',
+        height: '100vh',
+        zIndex: '2147483647',
         pointerEvents: 'none',
-        zIndex: '999998',
-        overflow: 'hidden'
+        background: 'transparent'
     });
     
+    function resizeCanvas() {
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    
+    window.addEventListener('resize', resizeCanvas, { passive: true });
+    
     // ═══════════════════════════════════════════════════════════════════════
-    // Target Highlight
+    // Click Ripple State
     // ═══════════════════════════════════════════════════════════════════════
     
-    const highlight = document.createElement('div');
-    highlight.id = '__xod_highlight__';
-    Object.assign(highlight.style, {
-        position: 'fixed',
-        border: '2px solid #00ff88',
-        borderRadius: '4px',
-        pointerEvents: 'none',
-        zIndex: '999997',
-        display: 'none',
-        boxShadow: '0 0 10px rgba(0,255,136,0.5)'
-    });
+    let clickFlash = { x: 0, y: 0, until: 0 };
+    const FLASH_MS = 200;
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // Drawing Functions
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    function clear() {
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    }
+    
+    function drawCrosshairs(x, y) {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+        
+        ctx.beginPath();
+        // Horizontal line across entire viewport
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(window.innerWidth, y + 0.5);
+        // Vertical line across entire viewport
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, window.innerHeight);
+        ctx.stroke();
+        
+        // Intersection dot
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    function drawCursor(x, y) {
+        // Draw arrow cursor
+        ctx.fillStyle = '#000';
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + 18);
+        ctx.lineTo(x + 5, y + 14);
+        ctx.lineTo(x + 9, y + 22);
+        ctx.lineTo(x + 12, y + 21);
+        ctx.lineTo(x + 8, y + 13);
+        ctx.lineTo(x + 14, y + 12);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+    
+    function drawCoords(x, y) {
+        const text = 'xod:' + x + ',' + y + ' vp:' + window.innerWidth + 'x' + window.innerHeight;
+        ctx.font = '14px monospace';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        const metrics = ctx.measureText(text);
+        const pad = 8;
+        const tx = window.innerWidth - metrics.width - pad * 2 - 10;
+        const ty = 10;
+        
+        // Background
+        ctx.fillRect(tx, ty, metrics.width + pad * 2, 24);
+        
+        // Text
+        ctx.fillStyle = '#0f0';
+        ctx.fillText(text, tx + pad, ty + 17);
+    }
+    
+    function drawClickFlash(now) {
+        if (now > clickFlash.until) return;
+        
+        const t = 1 - (clickFlash.until - now) / FLASH_MS;
+        const r = 8 + t * 24;
+        
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0, 150, 255, ' + (1 - t) * 0.6 + ')';
+        ctx.beginPath();
+        ctx.arc(clickFlash.x, clickFlash.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // Render Loop (60fps)
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    function frame(now) {
+        const x = window.__XOD_POS__.x;
+        const y = window.__XOD_POS__.y;
+        
+        clear();
+        drawCrosshairs(x, y);
+        drawCursor(x, y);
+        drawCoords(x, y);
+        drawClickFlash(now);
+        
+        requestAnimationFrame(frame);
+    }
     
     // ═══════════════════════════════════════════════════════════════════════
     // Inject
     // ═══════════════════════════════════════════════════════════════════════
     
-    document.body.appendChild(rippleContainer);
-    document.body.appendChild(highlight);
-    document.body.appendChild(cursor);
-    
-    // ═══════════════════════════════════════════════════════════════════════
-    // Animation Styles
-    // ═══════════════════════════════════════════════════════════════════════
-    
-    const style = document.createElement('style');
-    style.textContent = \`
-        @keyframes xod-ripple {
-            0% { transform: scale(0); opacity: 0.6; }
-            100% { transform: scale(2); opacity: 0; }
+    function inject() {
+        if (!document.body) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', inject);
+            } else {
+                requestAnimationFrame(inject);
+            }
+            return;
         }
-        .xod-ripple {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(0, 150, 255, 0.4);
-            animation: xod-ripple 0.4s ease-out forwards;
-            pointer-events: none;
-        }
-    \`;
-    document.head.appendChild(style);
+        
+        // Hide native cursor
+        const style = document.createElement('style');
+        style.id = '__xod_hide_cursor__';
+        style.textContent = '* { cursor: none !important; }';
+        document.head.appendChild(style);
+        
+        document.body.appendChild(canvas);
+        resizeCanvas();
+        requestAnimationFrame(frame);
+    }
+    inject();
     
     // ═══════════════════════════════════════════════════════════════════════
     // Public API
@@ -100,47 +186,30 @@ export const OVERLAY_SCRIPT = `
     
     window.__XOD_CURSOR__ = {
         move(x, y) {
-            cursor.style.left = x + 'px';
-            cursor.style.top = y + 'px';
+            window.__XOD_POS__.x = x;
+            window.__XOD_POS__.y = y;
         },
         
         click(x, y) {
-            // Create ripple
-            const ripple = document.createElement('div');
-            ripple.className = 'xod-ripple';
-            ripple.style.left = (x - 20) + 'px';
-            ripple.style.top = (y - 20) + 'px';
-            rippleContainer.appendChild(ripple);
-            
-            // Remove after animation
-            setTimeout(() => ripple.remove(), 500);
+            clickFlash.x = x;
+            clickFlash.y = y;
+            clickFlash.until = performance.now() + FLASH_MS;
         },
         
         highlight(rect) {
-            if (!rect) {
-                highlight.style.display = 'none';
-                return;
-            }
-            Object.assign(highlight.style, {
-                display: 'block',
-                left: rect.x + 'px',
-                top: rect.y + 'px',
-                width: rect.w + 'px',
-                height: rect.h + 'px'
-            });
+            // TODO: Add highlight support if needed
         },
         
         hide() {
-            cursor.style.display = 'none';
-            highlight.style.display = 'none';
+            canvas.style.display = 'none';
         },
         
         show() {
-            cursor.style.display = 'block';
+            canvas.style.display = 'block';
         }
     };
     
-    console.log('[XOD] Cursor overlay injected');
+    console.log('[XOD] Canvas overlay injected');
 })();
 `;
 

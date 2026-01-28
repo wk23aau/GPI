@@ -178,6 +178,11 @@ export const AGENT_SCRIPT = `
             };
         },
         
+        // Set mouse position from CDP events
+        setMousePos(x, y) {
+            mousePos = { x: Math.round(x), y: Math.round(y) };
+        },
+        
         // Watch a selector for visibility changes
         watch(selector) {
             watches.set(selector, { visible: false, rect: null });
