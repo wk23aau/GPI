@@ -1,0 +1,5 @@
+{
+  "name": "SmartCV Tailor",
+  "description": "An AI-powered resume builder that automatically tailors your CV to specific job descriptions using Gemini.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,57 @@
+{
+    "metadata": {
+        "created": "2026-01-28T21:52:28Z",
+        "candidate": "Waseem Raza Khan",
+        "source": "testdevjobs.com",
+        "totalJobsFound": 1901,
+        "lastUpdated": "2026-01-28T22:15:00Z"
+    },
+    "applications": [
+        {
+            "id": 1,
+            "jobId": "16817",
+            "title": "Staff Infrastructure & Automation Engineer",
+            "company": "Guidewire Software",
+            "url": "https://testdevjobs.com/job/guidewire-software-staff-infrastructure-and-automation-engineer-16817/",
+            "salary": "$166,000 - $250,000 USD",
+            "requiredSkills": [
+                "AWS",
+                "Docker",
+                "Kubernetes",
+                "Python",
+                "Linux",
+                "CI/CD",
+                "Distributed Systems"
+            ],
+            "atsScore": 78,
+            "relevanceScore": 75,
+            "matchingSkills": [
+                "Docker",
+                "Python",
+                "Linux",
+                "CI/CD",
+                "Kubernetes concepts",
+                "Distributed Systems Testing"
+            ],
+            "missingSkills": [
+                "5+ years SaaS production",
+                "AWS (limited)",
+                "RSpec"
+            ],
+            "status": "expired",
+            "notes": "CV tailored and saved. All apply links (Himalayas.app, Remotive.com, Lever) returned 404 - job likely filled or expired.",
+            "cvPath": "CV/CVs/Guidewire_Staff_Infrastructure_CV.pdf",
+            "timestamp": "2026-01-28T22:10:00Z"
+        },
+        {
+            "id": 2,
+            "jobId": "16810",
+            "title": "QA Tester",
+            "company": "Tester Work",
+            "url": "https://testdevjobs.com/job/tester-work-qa-tester-16810/",
+            "status": "skipped",
+            "notes": "Switzerland-only, freelance project-based role",
+            "timestamp": "2026-01-28T22:12:00Z"
+        }
+    ]
+}

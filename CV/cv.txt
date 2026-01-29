@@ -1,0 +1,59 @@
+SENIOR FRONTEND QA ENGINEER
+AUTOMATION & MANUAL
+WASEEM RAZA KHAN
+Flat 1 256-258 Upper Tooting Road | London, SW17 0DN | +447404132345 | waseemrazakhansqa@gmail.com
+GitHub | HF
+SUMMARY
+Quality Engineer with a specialized background in Machine Learning and Data Science. Unlike traditional testers, I possess the Python and Infrastructure expertise required to validate complex, distributed AI systems. Currently leveraging an MSc in Data Science to design testing strategies for AI models, ensuring reliability, privacy, and performance. Proficient in Docker, Linux, and CI/CD pipelines, with a passion for enforcing "Quality by Design" in high-tech environments.
+
+EDUCATION
+MSc Data Science & Analytics (Advanced Research)
+University of Hertfordshire | Hertfordshire, UK	2024 – December 2025 | Full-Time | (GPA 3.57 current)
+Bachelor of Science (Computer Science)
+The Islamia University of Bahawalpur | Bahawalpur, PK	2015 – 2019 | Full-Time | (GPA 3.3/4.0)
+
+PROFESSIONAL EXPERIENCES
+AI Quality Engineer / Machine Learning Engineer
+Archopinion | London, UK	Jan 2024 – Present | Part-Time
+Designing quality gates and testing strategies for an AI-driven document analysis platform.
+	AI System Testing: Developed the test strategy for complex NLP and Computer Vision models. ensuring high accuracy and reliability before deployment to production.
+	Python Automation: Wrote Python scripts to automate data validation pipelines, checking large datasets for consistency and "poisoned" data—critical for model integrity.
+	Infrastructure QA: Managed Docker containers for model inference, conducting performance testing to ensure the system remained stable under GPU-intensive loads.
+	CI/CD Implementation: Integrated automated quality checks into the deployment pipeline, ensuring that only models meeting specific accuracy thresholds were released.
+	Collaboration: Worked daily with Data Scientists to define "testability" for non-deterministic AI outputs.
+Senior Software Engineer (Backend & Systems Quality)
+Al Yamama Company | NEOM (The LINE), Saudi Arabia	Jan 2023 – Jan 2024 | Full-Time
+Focused on the reliability of distributed tracking systems and infrastructure.
+	Distributed Systems Testing: Validated a distributed RFID tracking system across multiple physical sites, mirroring the complexity of federated networks.
+	Linux & Scripting: Maintained Linux-based servers, using Bash scripts to automate system health checks and log rotation.
+	API & Database QA: Built automated API tests to verify secure data transmission between local nodes and the central cloud, ensuring data privacy and integrity.
+	Performance Engineering: Optimized PostgreSQL queries and backend logic to handle high-concurrency data streams.
+QA Automation Engineer
+Amigo Software| Lahore, Pakistan	Oct 2020 – Dec 2023 | Full-Time
+Core QA role for "Rainbow Classroom," a real-time web communication platform.
+	Test Automation Frameworks: Contributed to the development of automated test suites for a real-time communication platform (Rainbow Classroom).
+	Pipeline Management: Helped enforce quality gates in the release process, preventing critical bugs from reaching the production environment.
+	Root Cause Analysis: Investigated complex backend failures, using logs and monitoring tools to provide actionable feedback to developers.
+Frontend Web Developer / Tester
+Eyecix Solutions| Lahore, Pakistan	July 2019 – Oct 2020 | Full-Time
+	Foundation in Code: Developed responsive websites using HTML, CSS, and JavaScript.
+	White Box Testing: This developer background allows me to perform "Grey Box" testing, as I can read the source code to understand exactly why a UI bug is occurring.
+TECHNICAL SKILLS
+	Core Language: Python (Advanced scripting, Automation, PyTest), Bash.
+	Infrastructure & DevOps: Docker (Containerization), Kubernetes concepts, Linux/UNIX administration, CI/CD (GitHub Actions/Pipelines as Code).
+	AI & Data QA: Model Evaluation, Data Integrity Testing, Federated Learning concepts, GPU resource monitoring, Pandas/NumPy.
+	Testing: Automated Testing (Backend/API), Non-functional Testing (Performance/Scalability), Security/Privacy validation.
+CORE SKILLS
+	Frontend Automation: Cypress, Selenium, JavaScript/TypeScript, Playwright.
+	Manual & UI Testing: Cross-browser Testing, Responsive Design Validation, WCAG Accessibility, DOM Debugging.
+	Web Technologies: HTML5, CSS3, React, Next.js, REST APIs (Postman).
+	Processes & Tools: Agile/Scrum, Jira, Git, Jenkins, GitLab CI, SQL.
+	Domain Experience: Regulatory Compliance, Enterprise Systems, Data Security.
+
+PROJECTS
+	HiddenSentimentNLP (MSc):
+	Developed a transformer-based NLP system to detect implicit or hidden sentiment in user-generated content. Integrated a live web scraping module to extract real-time product reviews from Amazon and deployed the model directly onto a user-facing interface for instant inference. Demonstrated full-stack capability by combining data extraction, inference API, and front-end display for live prediction.
+	Offline Tracker - Lost & Found (BSCS):
+	Designed and implemented a GSM-based location tracking system using encrypted SMS communication between paired mobile apps and a web interface (Twilio API). Enabled secure, internet-independent location sharing and recovery of lost or stolen devices through automated SMS requests and encrypted coordinate responses.
+	JD2CVs (MVP):
+	Conceived, designed, and deployed a full-stack web application that allows users to paste a job description and receive a CV that is interactive with live editing interface allowing users to directly modify and refine their CV content either visual or textual in real-time within the browser by commanding AI or manual customization.
