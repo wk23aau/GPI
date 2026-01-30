@@ -116,3 +116,70 @@ Page.captureScreenshot {"format":"jpeg","quality":25}
 - **Include \n** - Commands need newline at end
 - **WaitMs 1000-2000** - Give time for response
 - **Loop forever** - Never exit, never stop
+
+---
+
+## Vision Automation Flow
+
+### Main Loop
+
+```
+┌─────────────────────────────────────────────────┐
+│  1. VISIT TARGET                                │
+│     └── Page.navigate {"url":"..."}             │
+│     └── Wait for page load                      │
+├─────────────────────────────────────────────────┤
+│  2. ANALYSE SHOT                                │
+│     └── Capture screenshot (400×640)            │
+│     └── Analyze page content                    │
+├─────────────────────────────────────────────────┤
+│  3. FIND PROBES                                 │
+│     └── __cdp.ui() to get all interactables     │
+│     └── __cdp.find("text") to locate targets    │
+├─────────────────────────────────────────────────┤
+│  4. EXECUTE (max 2 tries per probe)             │
+│     ├── Try 1 (Raw DOM):                        │
+│     │   └── __cdp.find() for coords             │
+│     │   └── Execute action (click/type)         │
+│     ├── Try 2 (Raw DOM):                        │
+│     │   └── __cdp.find() for coords             │
+│     │   └── Execute action                      │
+│     ├── If DOM failed 2x → VISION FALLBACK:     │
+│     │   └── Capture screenshot                  │
+│     │   └── Vision-based coord analysis         │
+│     │   └── Execute via vision coords           │
+│     └── Move to next probe                      │
+├─────────────────────────────────────────────────┤
+│  5. NEXT SHOT                                   │
+│     └── Capture new screenshot                  │
+│     └── Go to step 2 (ANALYSE)                  │
+└─────────────────────────────────────────────────┘
+```
+
+### Execution Pattern
+
+```javascript
+// For each probe:
+for (let attempt = 1; attempt <= 2; attempt++) {
+    // 1. Capture shot
+    Page.captureScreenshot {"format":"jpeg","quality":50}
+    
+    // 2. Find coords
+    __cdp.find("target text")  // → {x, y}
+    
+    // 3. Execute
+    Input.dispatchMouseEvent {"type":"mousePressed","x":X,"y":Y,...}
+    Input.dispatchMouseEvent {"type":"mouseReleased","x":X,"y":Y,...}
+    
+    // 4. Check success, break if done
+}
+// Move to next probe
+```
+
+### Retry Logic
+
+| Attempt | Action |
+|---------|--------|
+| Try 1 | Capture → Find → Execute |
+| Try 2 | Re-capture → Re-find → Re-execute |
+| After 2 | Move to next probe |

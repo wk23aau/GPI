@@ -63,6 +63,10 @@ export class CDP {
             try { await this.send(`${d}.enable`); results[d] = true; }
             catch { results[d] = false; }
         }
+        // Set viewport once at connection
+        await this.send('Emulation.setDeviceMetricsOverride', {
+            width: 400, height: 640, deviceScaleFactor: 1, mobile: false
+        });
         return results;
     }
 
